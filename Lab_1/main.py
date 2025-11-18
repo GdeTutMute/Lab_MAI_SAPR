@@ -10,3 +10,4 @@ for i in range(n):
     
     print(spaces + stars + right_spaces)
 print("sverhu piramida))")
+print("What means merge conflict?")
