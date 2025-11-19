@@ -8,24 +8,10 @@ module apb_slave(apb_interface apb_if);
     logic trans_done;
     logic ready_set;
 
-    // Логика обратного счетчика
+    // Объединенная логика счетчика и APB
     always_ff @(posedge apb_if.PCLK or negedge apb_if.PRESETn) begin
         if (!apb_if.PRESETn) begin
-            current_value_reg <= 32'b0;
-            counting <= 1'b0;
-        end else if (counting && current_value_reg > 0) begin
-            current_value_reg <= current_value_reg - 1;
-            // Автоматическая остановка при достижении 0
-            if (current_value_reg == 1) begin
-                counting <= 1'b0;
-                $display("[APB_SLAVE] Counter reached zero, auto-stopped");
-            end
-        end
-    end
-
-    // APB логика
-    always_ff @(posedge apb_if.PCLK or negedge apb_if.PRESETn) begin
-        if (!apb_if.PRESETn) begin
+            // Сброс всех регистров
             apb_if.PREADY  <= 1'b0;
             apb_if.PSLVERR <= 1'b0;
             max_value_reg  <= 32'b0;
@@ -36,6 +22,16 @@ module apb_slave(apb_interface apb_if);
             trans_done     <= 1'b0;
             ready_set      <= 1'b0;
         end else begin
+            // Логика обратного счетчика
+            if (counting && current_value_reg > 0) begin
+                current_value_reg <= current_value_reg - 1;
+                // Автоматическая остановка при достижении 0
+                if (current_value_reg == 1) begin
+                    counting <= 1'b0;
+                    $display("[APB_SLAVE] Counter reached zero, auto-stopped");
+                end
+            end
+
             // Сброс сигналов ошибки и готовности только когда транзакция завершена
             if (apb_if.PREADY && apb_if.PSEL && apb_if.PENABLE) begin
                 apb_if.PREADY <= 1'b0;
